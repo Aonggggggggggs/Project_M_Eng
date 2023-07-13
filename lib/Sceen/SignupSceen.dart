@@ -20,10 +20,12 @@ class _SignUpSceenState extends State<SignUpSceen> {
   final EmailController = TextEditingController();
 
   final PasswordController = TextEditingController();
-  
+
   final ConfirmpasswordController = TextEditingController();
 
   final UserNameController = TextEditingController();
+
+  final AgeController = TextEditingController();
 
   @override
   void dispose() {
@@ -33,35 +35,50 @@ class _SignUpSceenState extends State<SignUpSceen> {
 
     UserNameController.dispose();
 
+    AgeController.dispose();
+
     super.dispose();
   }
-   Future addUserDeatails(
-      String userName, String email,) async {
-    await FirebaseFirestore.instance.collection('users').add({
-      'user name': userName,
-      'email': email,
+    Future<void> _selectDateFromPicker(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(DateTime.now().year - 20),
+      firstDate: DateTime(DateTime.now().year - 30),
+      lastDate: DateTime(DateTime.now().year),
+    );
+    if (picked != null)
+      setState(() {
+        AgeController.text = "${picked.day}/ ${picked.month}/ ${picked.year}";
+      });
+  }
+  addUserDeatails() async {
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    var currentUser = auth.currentUser;
+    await FirebaseFirestore.instance.collection('Users')
+    .doc(currentUser!.email)
+    .set({
+      "email":EmailController.text,
+      "username":UserNameController.text,
+      "age":AgeController.text
     });
   }
+
   bool passwordConfirmed() {
-    if (ConfirmpasswordController.text.trim() == 
-        PasswordController.text.trim()){
+    if (ConfirmpasswordController.text ==
+        PasswordController.text) {
       return true;
     } else {
       return false;
     }
   }
-  Future signUp() async{
-    if (passwordConfirmed()){
-      
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: EmailController.text.trim(), 
-        password: PasswordController.text.trim(),
+  Future signUp() async {
+    if (passwordConfirmed()) {
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: EmailController.text,
+        password: PasswordController.text,
       );
 
-      
-      addUserDeatails(
-        UserNameController.text.trim(),
-        EmailController.text.trim());
+      addUserDeatails();
     }
   }
 
@@ -70,6 +87,10 @@ class _SignUpSceenState extends State<SignUpSceen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(20))
+        ),
         backgroundColor: Color.fromRGBO(0, 28, 48, 1),
         leading: IconButton(
             onPressed: () {
@@ -89,6 +110,7 @@ class _SignUpSceenState extends State<SignUpSceen> {
               )),
         ),
         centerTitle: true,
+        
       ),
       backgroundColor: Color.fromRGBO(23, 107, 135, 1),
       body: SingleChildScrollView(
@@ -108,8 +130,28 @@ class _SignUpSceenState extends State<SignUpSceen> {
                     const SizedBox(
                       height: 25,
                     ),
-                    resableTextField("ชื่อผู้ใช้", Icons.person_2_outlined,
-                        false, UserNameController),
+                    resableTextField(
+                        "ชื่อผู้ใช้", Icons.person, false, UserNameController),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    TextField(
+                      style: TextStyle(color: Colors.white),
+                      controller: AgeController,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(20))
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 8,horizontal: 15
+                        ),
+                        hintText: "วันเดือนปีเกิด",hintStyle: const TextStyle(color: Colors.white,),
+                        suffix: IconButton(
+                          onPressed: ( ) => _selectDateFromPicker(context),
+                          icon: Icon(Icons.calendar_today,color: Colors.white,),)
+                      ),
+                    ),
                     const SizedBox(
                       height: 20,
                     ),
@@ -123,8 +165,11 @@ class _SignUpSceenState extends State<SignUpSceen> {
                     const SizedBox(
                       height: 20,
                     ),
-                    resableTextField(
-                      "ยืนยันรหัสผ่าน", Icons.lock, true, ConfirmpasswordController),
+                    resableTextField("ยืนยันรหัสผ่าน", Icons.lock, true,
+                        ConfirmpasswordController),
+                    const SizedBox(
+                      height: 20,
+                    ),
                     signIn_UpButton(context, false, () async {
                       if (_formKey.currentState!.validate()) {
                         _formKey.currentState?.save();
@@ -137,8 +182,7 @@ class _SignUpSceenState extends State<SignUpSceen> {
                                   builder: (context) => const Home()));
                         } on FirebaseAuthException catch (e) {
                           Fluttertoast.showToast(
-                              msg: ("โปรดกรอกข้อมูลให้ถูกต้อง"),
-                              gravity: ToastGravity.CENTER);
+                              msg: e.code, gravity: ToastGravity.CENTER);
                         }
                       }
                     }),

@@ -1,8 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 import '../widget/widget.dart';
+import 'Forgot_password.dart';
 import 'HomeSceen.dart';
 import 'SignupSceen.dart';
 
@@ -15,8 +18,8 @@ class Signinsceen extends StatefulWidget {
 }
 
 class _SigninsceenState extends State<Signinsceen> {
-  TextEditingController PasswordController = TextEditingController();
-  TextEditingController EmailController = TextEditingController();
+  final PasswordController = TextEditingController();
+  final EmailController = TextEditingController();
   final RoundedLoadingButtonController googleController =
       RoundedLoadingButtonController();
   final RoundedLoadingButtonController facebookController =
@@ -29,7 +32,7 @@ class _SigninsceenState extends State<Signinsceen> {
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.fromLTRB(
-              30, MediaQuery.of(context).size.height * 0.2, 20, 0),
+              30, MediaQuery.of(context).size.height * 0.15, 20, 0),
           child: Column(
             children: <Widget>[
               logo_widget("assets/images/logo.png"),
@@ -37,7 +40,7 @@ class _SigninsceenState extends State<Signinsceen> {
                 height: 35,
               ),
               resableTextField(
-                  "อีเมล์", Icons.person_2_outlined, false, EmailController),
+                  "อีเมล์", Icons.email, false, EmailController),
               const SizedBox(
                 height: 20,
               ),
@@ -46,26 +49,46 @@ class _SigninsceenState extends State<Signinsceen> {
               const SizedBox(
                 height: 20,
               ),
-              signIn_UpButton(context, true, () {
-                FirebaseAuth.instance
+              signIn_UpButton(context, true, () async{
+                try{
+                await FirebaseAuth.instance
                     .signInWithEmailAndPassword(
-                        email: EmailController.text,
-                        password: PasswordController.text)
+                        email: EmailController.text.trim(),
+                        password: PasswordController.text.trim());
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => const Home()));
+                }on FirebaseException catch(e){
+                  Fluttertoast.showToast(msg: e.code,
+                  gravity: ToastGravity.CENTER);
+                }
+                      
+              }),
+              /*signIn_UpButton(context, true, () async{
+                await FirebaseAuth.instance
+                    .signInWithEmailAndPassword(
+                        email: EmailController.text.trim(),
+                        password: PasswordController.text.trim())
                     .then((value) {
                   print('เข้าสู่ระบบ');
                   Navigator.push(context,
                       MaterialPageRoute(builder: (context) => const Home()));
                 }).onError((error, stackTrace) {
+                  Fluttertoast.showToast(
+                    msg: error.toString(), gravity: ToastGravity.CENTER);
                   print("Error,${error.toString()}");
+
+
                 });
-              }),
+              }),*/
               Column(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   RoundedLoadingButton(
                     controller: googleController,
-                    onPressed: () {
-                      signInWithGoogle();
+                    onPressed: () async{
+                    await signInWithGoogle();
+                    Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => const Home()));
                     },
                     successColor: Colors.red,
                     color: Colors.red,
@@ -82,12 +105,12 @@ class _SigninsceenState extends State<Signinsceen> {
                         SizedBox(
                           width: 15,
                         ),
-                        Text("เข้าสู่ระบบผ่าน Gmail",
+                        Text(
+                          "เข้าสู่ระบบผ่าน Gmail",
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500
-                          ),
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500),
                         )
                       ],
                     ),
@@ -102,9 +125,7 @@ class _SigninsceenState extends State<Signinsceen> {
                 children: [
                   RoundedLoadingButton(
                     controller: facebookController,
-                    onPressed: () {
-                      signInWithGoogle();
-                    },
+                    onPressed: () {},
                     successColor: Colors.red,
                     width: MediaQuery.of(context).size.width * 0.8,
                     elevation: 0,
@@ -119,12 +140,12 @@ class _SigninsceenState extends State<Signinsceen> {
                         SizedBox(
                           width: 15,
                         ),
-                        Text("เข้าสู่ระบบผ่าน Facebook",
+                        Text(
+                          "เข้าสู่ระบบผ่าน Facebook",
                           style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500
-                          ),
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500),
                         )
                       ],
                     ),
@@ -145,7 +166,9 @@ class _SigninsceenState extends State<Signinsceen> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => SignUpSceen(showLoginPage: () {  },)));
+                              builder: (context) => SignUpSceen(
+                                    showLoginPage: () {},
+                                  )));
                     },
                     child: const Text(
                       " สมัครสมาชิก",
@@ -157,6 +180,32 @@ class _SigninsceenState extends State<Signinsceen> {
                   )
                 ],
               ),
+              const SizedBox(height: 5,),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("หรือ",
+                      style:
+                          TextStyle(color: Color.fromARGB(179, 255, 255, 255))),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => Forgot(
+                                  
+                                  )));
+                    },
+                    child: const Text(
+                      "ลืมรหัสผ่าน",
+                      style: TextStyle(
+                        color: Color.fromARGB(255, 255, 255, 255),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                ],
+              )
             ],
           ),
         ),
@@ -165,6 +214,12 @@ class _SigninsceenState extends State<Signinsceen> {
   }
 }
 
-signInWithGoogle(){
-
+signInWithGoogle()async{
+final GoogleSignInAccount? gUser = await GoogleSignIn().signIn();
+final GoogleSignInAuthentication gAuth = await gUser!.authentication;
+final credential = GoogleAuthProvider.credential(
+  accessToken: gAuth.accessToken,
+  idToken: gAuth.idToken);
+return await FirebaseAuth.instance.signInWithCredential(credential);
 }
+
